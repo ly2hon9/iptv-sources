@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { LAN_IP_PREFIXES, qwerttvv_bj_iptv_filter } from '../../src/sources/qwerttvv_bj_iptv';
+import {
+  LAN_IP_PREFIXES,
+  qwerttvv_bj_iptv_filter,
+  qwerttvv_bj_iptv_sources,
+} from '../../src/sources/qwerttvv_bj_iptv';
 import { normalizeSourceFilterResults } from '../../src/sources/utils';
 
 const raw = [
@@ -49,4 +53,27 @@ describe('qwerttvv_bj_iptv_filter', () => {
       'http://10.0.0.1:23234/rtp/239.3.1.118:8001'
     );
   });
+});
+
+describe('qwerttvv_bj_iptv multicast sources', () => {
+  it.each(['q_bj_iptv_unicom_m', 'q_bj_iptv_mobile_m'])(
+    'preserves channel URLs and emits one playlist for %s',
+    (filename) => {
+      const source = qwerttvv_bj_iptv_sources.find(({ f_name }) => f_name === filename);
+      expect(source).toBeDefined();
+
+      const collectFn = vi.fn();
+      const results = normalizeSourceFilterResults(
+        source!.filter(raw, 'normal', collectFn, filename)
+      );
+
+      expect(results).toEqual([{ filename, m3u: raw, channelCount: 2 }]);
+      expect(collectFn).toHaveBeenCalledTimes(2);
+      expect(collectFn).toHaveBeenCalledWith(
+        'http channel',
+        'http://192.168.123.1:23234/rtp/239.3.1.118:8001'
+      );
+      expect(collectFn).toHaveBeenCalledWith('rtp channel', 'rtp://239.3.1.159:8000');
+    }
+  );
 });

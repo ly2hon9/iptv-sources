@@ -1,5 +1,11 @@
 import { collectM3uSource } from '../utils';
-import { handle_m3u, ISource, type TSourceFilterResult, type TSources } from './utils';
+import {
+  default_m3u_filter,
+  handle_m3u,
+  ISource,
+  type TSourceFilterResult,
+  type TSources,
+} from './utils';
 
 export const LAN_IP_PREFIXES = [
   ...Array.from({ length: 256 }, (_, index) => `192.168.${index}`),
@@ -56,7 +62,7 @@ export const qwerttvv_bj_iptv_sources: TSources = [
     name: 'qwerttvv/Beijing-IPTV IPTV Unicom Multicast',
     f_name: 'q_bj_iptv_unicom_m',
     url: 'https://raw.githubusercontent.com/qwerttvv/Beijing-IPTV/master/IPTV-Unicom-Multicast.m3u',
-    filter: qwerttvv_bj_iptv_filter,
+    filter: default_m3u_filter,
   },
   {
     name: 'qwerttvv/Beijing-IPTV IPTV Mobile',
@@ -68,6 +74,6 @@ export const qwerttvv_bj_iptv_sources: TSources = [
     name: 'qwerttvv/Beijing-IPTV IPTV Mobile Multicast',
     f_name: 'q_bj_iptv_mobile_m',
     url: 'https://raw.githubusercontent.com/qwerttvv/Beijing-IPTV/master/IPTV-Mobile-Multicast.m3u',
-    filter: qwerttvv_bj_iptv_filter,
+    filter: default_m3u_filter,
   },
 ];
