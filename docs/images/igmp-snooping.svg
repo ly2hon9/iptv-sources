@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1100" viewBox="0 0 1600 1100">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f4ff"/>
+      <stop offset="1" stop-color="#e9faf5"/>
+    </linearGradient>
+    <linearGradient id="switchOn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#0ea5a4"/>
+    </linearGradient>
+    <linearGradient id="switchOff" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1f1147" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrowUp" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowFlood" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#ef4444"/>
+    </marker>
+    <marker id="arrowOk" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#10b981"/>
+    </marker>
+    <style>
+      .cn { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
+      .title { font-size: 42px; font-weight: 700; fill: #1f1147; }
+      .subtitle { font-size: 20px; fill: #5b4a82; }
+      .panel-title { font-size: 30px; font-weight: 700; }
+      .node-title { font-size: 22px; font-weight: 700; fill: #1f1147; }
+      .node-desc { font-size: 17px; fill: #5b4a82; }
+      .label { font-size: 18px; font-weight: 700; }
+      .small { font-size: 15px; fill: #5b4a82; }
+      .hint { font-size: 17px; fill: #4b3a72; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1100" fill="url(#bg)"/>
+  <circle cx="1500" cy="80" r="180" fill="#e9d5ff" opacity="0.55"/>
+  <circle cx="80" cy="1020" r="220" fill="#ccfbf1" opacity="0.55"/>
+
+  <text x="800" y="74" text-anchor="middle" class="cn title">IGMP Snooping 启停对比</text>
+  <text x="800" y="110" text-anchor="middle" class="cn subtitle">交换机是否偷听 IGMP 报文，决定组播流是否像广播一样泛洪</text>
+
+  <!-- ====================== Panel 1: 未启用 ====================== -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="170" width="720" height="850" rx="30" fill="#ffffff" stroke="#fecaca" stroke-width="3"/>
+  </g>
+  <rect x="80" y="200" width="220" height="58" rx="29" fill="#fee2e2"/>
+  <text x="190" y="240" text-anchor="middle" class="cn panel-title" fill="#b91c1c">未启用 IGMP Snooping</text>
+
+  <!-- Operator -->
+  <g filter="url(#shadow)">
+    <rect x="270" y="350" width="220" height="140" rx="24" fill="#fdf4ff" stroke="#ddd6fe" stroke-width="3"/>
+    <text x="380" y="400" text-anchor="middle" class="cn node-title">运营商 / 上游</text>
+    <text x="380" y="430" text-anchor="middle" class="cn node-desc">UDP 组播流</text>
+    <text x="380" y="455" text-anchor="middle" class="cn node-desc">239.3.1.159:8000</text>
+  </g>
+
+  <!-- Switch (off) -->
+  <g filter="url(#shadow)">
+    <rect x="270" y="560" width="220" height="160" rx="24" fill="url(#switchOff)"/>
+    <text x="380" y="610" text-anchor="middle" class="cn node-title" fill="#ffffff">二层交换机</text>
+    <text x="380" y="640" text-anchor="middle" class="cn" font-size="17" fill="#fee2e2">未启用 Snooping</text>
+    <text x="380" y="668" text-anchor="middle" class="cn" font-size="16" fill="#fecaca">不知道谁要组播</text>
+    <text x="380" y="695" text-anchor="middle" class="cn" font-size="16" fill="#fecaca">当作未知单播处理</text>
+  </g>
+
+  <!-- Devices (4 ports) -->
+  <g filter="url(#shadow)">
+    <rect x="70" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#fecaca" stroke-width="3"/>
+    <text x="135" y="822" text-anchor="middle" class="cn node-title">端口 1</text>
+    <text x="135" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="135" y="878" text-anchor="middle" class="cn small" fill="#b91c1c">被强制接收</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="220" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#fecaca" stroke-width="3"/>
+    <text x="285" y="822" text-anchor="middle" class="cn node-title">端口 2</text>
+    <text x="285" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="285" y="878" text-anchor="middle" class="cn small" fill="#b91c1c">被强制接收</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="370" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
+    <text x="435" y="822" text-anchor="middle" class="cn node-title">端口 3</text>
+    <text x="435" y="850" text-anchor="middle" class="cn node-desc">订阅者</text>
+    <text x="435" y="878" text-anchor="middle" class="cn small" fill="#065f46">想要组播</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="520" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#fecaca" stroke-width="3"/>
+    <text x="585" y="822" text-anchor="middle" class="cn node-title">端口 4</text>
+    <text x="585" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="585" y="878" text-anchor="middle" class="cn small" fill="#b91c1c">被强制接收</text>
+  </g>
+
+  <!-- Upstream arrow -->
+  <line x1="380" y1="490" x2="380" y2="555" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrowUp)"/>
+  <text x="395" y="525" class="cn label" fill="#7c3aed">组播入</text>
+
+  <!-- Flood arrows to all 4 ports -->
+  <line x1="295" y1="720" x2="135" y2="775" stroke="#ef4444" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFlood)"/>
+  <line x1="335" y1="720" x2="285" y2="775" stroke="#ef4444" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFlood)"/>
+  <line x1="380" y1="720" x2="435" y2="775" stroke="#ef4444" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFlood)"/>
+  <line x1="425" y1="720" x2="585" y2="775" stroke="#ef4444" stroke-width="3" stroke-dasharray="6 4" marker-end="url(#arrowFlood)"/>
+
+  <text x="350" y="935" text-anchor="middle" class="cn hint">组播像洪水一样被复制 4 份发到全部端口</text>
+  <text x="350" y="965" text-anchor="middle" class="cn hint">未订阅的端口也要处理、占用带宽</text>
+  <text x="350" y="995" text-anchor="middle" class="cn label" fill="#b91c1c">浪费带宽 · 拖慢弱终端</text>
+
+  <!-- ====================== Panel 2: 启用 ====================== -->
+  <g filter="url(#shadow)">
+    <rect x="840" y="170" width="720" height="850" rx="30" fill="#ffffff" stroke="#a7f3d0" stroke-width="3"/>
+  </g>
+  <rect x="880" y="200" width="220" height="58" rx="29" fill="#d1fae5"/>
+  <text x="990" y="240" text-anchor="middle" class="cn panel-title" fill="#065f46">启用 IGMP Snooping</text>
+
+  <!-- Operator -->
+  <g filter="url(#shadow)">
+    <rect x="1070" y="350" width="220" height="140" rx="24" fill="#fdf4ff" stroke="#ddd6fe" stroke-width="3"/>
+    <text x="1180" y="400" text-anchor="middle" class="cn node-title">运营商 / 上游</text>
+    <text x="1180" y="430" text-anchor="middle" class="cn node-desc">UDP 组播流</text>
+    <text x="1180" y="455" text-anchor="middle" class="cn node-desc">239.3.1.159:8000</text>
+  </g>
+
+  <!-- Switch (on) -->
+  <g filter="url(#shadow)">
+    <rect x="1070" y="560" width="220" height="160" rx="24" fill="url(#switchOn)"/>
+    <text x="1180" y="610" text-anchor="middle" class="cn node-title" fill="#ffffff">二层交换机</text>
+    <text x="1180" y="640" text-anchor="middle" class="cn" font-size="17" fill="#a7f3d0">启用 Snooping</text>
+    <text x="1180" y="668" text-anchor="middle" class="cn" font-size="16" fill="#d1fae5">偷听 IGMP 加入报文</text>
+    <text x="1180" y="695" text-anchor="middle" class="cn" font-size="16" fill="#d1fae5">建立 组→端口 转发表</text>
+  </g>
+
+  <!-- Devices (4 ports) -->
+  <g filter="url(#shadow)">
+    <rect x="870" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#a7f3d0" stroke-width="3"/>
+    <text x="935" y="822" text-anchor="middle" class="cn node-title">端口 1</text>
+    <text x="935" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="935" y="878" text-anchor="middle" class="cn small" fill="#065f46">不接收组播</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1020" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#a7f3d0" stroke-width="3"/>
+    <text x="1085" y="822" text-anchor="middle" class="cn node-title">端口 2</text>
+    <text x="1085" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="1085" y="878" text-anchor="middle" class="cn small" fill="#065f46">不接收组播</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1170" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#10b981" stroke-width="3"/>
+    <text x="1235" y="822" text-anchor="middle" class="cn node-title">端口 3</text>
+    <text x="1235" y="850" text-anchor="middle" class="cn node-desc">订阅者</text>
+    <text x="1235" y="878" text-anchor="middle" class="cn small" fill="#065f46">发送 IGMP 加入</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1320" y="780" width="130" height="120" rx="20" fill="#ffffff" stroke="#a7f3d0" stroke-width="3"/>
+    <text x="1385" y="822" text-anchor="middle" class="cn node-title">端口 4</text>
+    <text x="1385" y="850" text-anchor="middle" class="cn node-desc">未订阅</text>
+    <text x="1385" y="878" text-anchor="middle" class="cn small" fill="#065f46">不接收组播</text>
+  </g>
+
+  <!-- IGMP join dashed arrow from port 3 back up to switch -->
+  <path d="M1235 778 Q1235 745 1180 720" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="1310" y="755" class="cn small" fill="#065f46">IGMP 加入</text>
+
+  <!-- Upstream arrow -->
+  <line x1="1180" y1="490" x2="1180" y2="555" stroke="#7c3aed" stroke-width="3" marker-end="url(#arrowUp)"/>
+  <text x="1195" y="525" class="cn label" fill="#7c3aed">组播入</text>
+
+  <!-- Selective forwarding arrow only to port 3 -->
+  <line x1="1135" y1="720" x2="1235" y2="775" stroke="#10b981" stroke-width="3" marker-end="url(#arrowOk)"/>
+  <text x="1080" y="755" class="cn small" fill="#065f46">按表精确转发</text>
+
+  <text x="1150" y="935" text-anchor="middle" class="cn hint">交换机维护"组播组 → 端口"映射表</text>
+  <text x="1150" y="965" text-anchor="middle" class="cn hint">组播只发到真正订阅的端口 3</text>
+  <text x="1150" y="995" text-anchor="middle" class="cn label" fill="#065f46">节省带宽 · 隔离无关端口</text>
+
+  <text x="800" y="1070" text-anchor="middle" class="cn small">iptv-sources · 为什么推荐在 OpenWrt 上启用 igmp_snooping</text>
+</svg>
