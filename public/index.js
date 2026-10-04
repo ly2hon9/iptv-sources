@@ -184,11 +184,6 @@ class PathParser {
     const pathname = urlObj.pathname;
     if (!pathname || pathname === '/') {
       markdownUrl = 'README.md';
-    } else if (pathname.startsWith('/list/bj_iptv/')) {
-      const channelPath = pathname.slice('/list/bj_iptv/'.length).replace(/^\/+|\/+$/g, '');
-      if (channelPath) {
-        markdownUrl = '/list/bj_iptv/' + channelPath + '.md';
-      }
     } else if (pathname.startsWith('/list/')) {
       const channelPath = pathname.slice('/list/'.length).replace(/^\/+|\/+$/g, '');
       if (channelPath) {

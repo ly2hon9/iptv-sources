@@ -1,4 +1,5 @@
 import { collectM3uSource } from '../utils';
+import { IPTV_PROXY_PORT, LAN_IP_PREFIXES } from './china_iptv';
 import {
   default_m3u_filter,
   handle_m3u,
@@ -7,13 +8,9 @@ import {
   type TSources,
 } from './utils';
 
-export const LAN_IP_PREFIXES = [
-  ...Array.from({ length: 256 }, (_, index) => `192.168.${index}`),
-  '10.0.0',
-];
-
+// 上游非组播源中的地址已经是 http://192.168.123.1:23234/rtp/... 形式，这里连同 host 一起替换
 const replaceWithLanProxyUrl = (url: string, lanIpPrefix: string) => {
-  const proxyOrigin = `http://${lanIpPrefix}.1:23234`;
+  const proxyOrigin = `http://${lanIpPrefix}.1:${IPTV_PROXY_PORT}`;
 
   if (url.startsWith('rtp://')) {
     return `${proxyOrigin}/rtp/${url.slice('rtp://'.length)}`;

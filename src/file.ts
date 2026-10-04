@@ -8,7 +8,7 @@ import { gzip } from 'zlib';
 
 import type { TEPGSource } from './epgs/utils';
 import type { ISource } from './sources';
-import { with_github_raw_url_proxy } from './sources';
+import { CHINA_IPTV_DIR, with_github_raw_url_proxy } from './sources';
 import { m3u2txt } from './utils';
 
 import { mergeByDateAndChannel, parseEpgXml, sanitizeChannelFileName } from './epgs/parser';
@@ -48,24 +48,63 @@ export const resolveOutputFile = async (baseDir: string, f_name: string, ext: st
   return target;
 };
 
-/** 递归列出目录下所有文件（返回绝对路径），忽略子目录本身 */
-const listFilesRecursive = (dir: string): string[] => {
+/**
+ * 递归列出目录下所有文件（返回绝对路径），忽略子目录本身。
+ * excludeDirs 为需要跳过的顶层子目录名。
+ */
+const listFilesRecursive = (dir: string, excludeDirs: string[] = []): string[] => {
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).flatMap((entry) => {
-    const full = path.join(dir, entry);
-    return fs.statSync(full).isDirectory() ? listFilesRecursive(full) : [full];
+  return fs
+    .readdirSync(dir)
+    .filter((entry) => !excludeDirs.includes(entry))
+    .flatMap((entry) => {
+      const full = path.join(dir, entry);
+      return fs.statSync(full).isDirectory() ? listFilesRecursive(full) : [full];
+    });
+};
+
+const FETCH_CONCURRENCY = 8;
+const FETCH_RETRIES = 3;
+
+let activeFetches = 0;
+const fetchQueue: Array<() => void> = [];
+
+/** 限制同时进行的请求数，避免大量并发请求被 GitHub raw 代理限流（502 / ECONNRESET） */
+const withFetchSlot = async <T>(task: () => Promise<T>): Promise<T> => {
+  if (activeFetches >= FETCH_CONCURRENCY) {
+    await new Promise<void>((resolve) => fetchQueue.push(resolve));
+  }
+  activeFetches++;
+  try {
+    return await task();
+  } finally {
+    activeFetches--;
+    fetchQueue.shift()?.();
+  }
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export const getContent = (src: ISource | TEPGSource) =>
+  withFetchSlot(async () => {
+    const now = hrtime.bigint();
+    const url = /^https:\/\/raw.githubusercontent.com\//.test(src.url)
+      ? with_github_raw_url_proxy(src.url)
+      : src.url;
+
+    // 网络错误和 5xx 视为临时故障重试，4xx 直接返回
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const res = await fetch(url);
+        if (res.status < 500 || attempt >= FETCH_RETRIES) {
+          return [res.ok, await res.text(), now] as const;
+        }
+      } catch (e) {
+        if (attempt >= FETCH_RETRIES) throw e;
+      }
+      await sleep(1000 * attempt);
+    }
   });
-};
-
-export const getContent = async (src: ISource | TEPGSource) => {
-  const now = hrtime.bigint();
-  const url = /^https:\/\/raw.githubusercontent.com\//.test(src.url)
-    ? with_github_raw_url_proxy(src.url)
-    : src.url;
-
-  const res = await fetch(url);
-  return [res.ok, await res.text(), now];
-};
 
 export const writeM3u = async (name: string, m3u: string) => {
   const m3uDir = await createSubDirectory('m3u');
@@ -103,7 +142,9 @@ export const writeM3uToTxt = async (name: string, f_name: string, m3u: string) =
 export const mergeTxts = () => {
   const txts_p = path.resolve('m3u', 'txt');
 
-  const files = listFilesRecursive(txts_p).filter((f) => path.extname(f) === '.txt');
+  const files = listFilesRecursive(txts_p, [CHINA_IPTV_DIR]).filter(
+    (f) => path.extname(f) === '.txt'
+  );
 
   const txts = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n');
 
@@ -113,7 +154,9 @@ export const mergeTxts = () => {
 export const mergeSources = () => {
   const sources_p = path.resolve('m3u', 'sources');
   type Source = Record<string, string[]>; // 频道/分类名 -> URL 数组
-  const files = listFilesRecursive(sources_p).filter((f) => path.extname(f) === '.json');
+  const files = listFilesRecursive(sources_p, [CHINA_IPTV_DIR]).filter(
+    (f) => path.extname(f) === '.json'
+  );
 
   const res = {
     name: 'Sources',

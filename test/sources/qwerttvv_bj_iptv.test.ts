@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { LAN_IP_PREFIXES } from '../../src/sources/china_iptv';
 import {
-  LAN_IP_PREFIXES,
   qwerttvv_bj_iptv_filter,
   qwerttvv_bj_iptv_sources,
 } from '../../src/sources/qwerttvv_bj_iptv';
@@ -21,23 +21,24 @@ describe('qwerttvv_bj_iptv_filter', () => {
       qwerttvv_bj_iptv_filter(raw, 'skip', undefined, 'q_bj_iptv')
     );
 
-    expect(LAN_IP_PREFIXES).toHaveLength(257);
-    expect(results).toHaveLength(257);
+    expect(LAN_IP_PREFIXES).toHaveLength(13);
+    expect(results).toHaveLength(13);
+    expect(results.map(({ filename }) => filename)).toEqual(
+      LAN_IP_PREFIXES.map((p) => `bj_iptv/q_bj_iptv_${p.replace(/\./g, '_')}`)
+    );
     expect(results[0].filename).toBe('bj_iptv/q_bj_iptv_192_168_0');
-    expect(results[255].filename).toBe('bj_iptv/q_bj_iptv_192_168_255');
-    expect(results[256].filename).toBe('bj_iptv/q_bj_iptv_10_0_0');
-    expect(new Set(results.map(({ filename }) => filename)).size).toBe(257);
+    expect(results[12].filename).toBe('bj_iptv/q_bj_iptv_10_0_0');
   });
 
   it('rewrites HTTP and RTP channel URLs to each LAN gateway', () => {
     const results = normalizeSourceFilterResults(
       qwerttvv_bj_iptv_filter(raw, 'skip', undefined, 'q_bj_iptv')
     );
-    const result = results.find(({ filename }) => filename === 'bj_iptv/q_bj_iptv_192_168_31');
+    const result = results.find(({ filename }) => filename === 'bj_iptv/q_bj_iptv_192_168_6');
 
     expect(result).toBeDefined();
-    expect(result?.m3u).toContain('http://192.168.31.1:23234/rtp/239.3.1.118:8001');
-    expect(result?.m3u).toContain('http://192.168.31.1:23234/rtp/239.3.1.159:8000');
+    expect(result?.m3u).toContain('http://192.168.6.1:23234/rtp/239.3.1.118:8001');
+    expect(result?.m3u).toContain('http://192.168.6.1:23234/rtp/239.3.1.159:8000');
     expect(result?.m3u).not.toContain('192.168.123.1');
     expect(result?.channelCount).toBe(2);
   });
@@ -47,7 +48,7 @@ describe('qwerttvv_bj_iptv_filter', () => {
 
     qwerttvv_bj_iptv_filter(raw, 'normal', collectFn, 'q_bj_iptv');
 
-    expect(collectFn).toHaveBeenCalledTimes(257 * 2);
+    expect(collectFn).toHaveBeenCalledTimes(13 * 2);
     expect(collectFn).toHaveBeenCalledWith(
       'http channel',
       'http://10.0.0.1:23234/rtp/239.3.1.118:8001'
@@ -76,4 +77,29 @@ describe('qwerttvv_bj_iptv multicast sources', () => {
       expect(collectFn).toHaveBeenCalledWith('rtp channel', 'rtp://239.3.1.159:8000');
     }
   );
+});
+
+describe('qwerttvv_bj_iptv proxy environment variables', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it('follows IPTV_PROXY_IP_RANGES and IPTV_PROXY_PORT', async () => {
+    vi.stubEnv('IPTV_PROXY_IP_RANGES', '172.16.0-1');
+    vi.stubEnv('IPTV_PROXY_PORT', '4022');
+    vi.resetModules();
+    const mod = await import('../../src/sources/qwerttvv_bj_iptv');
+
+    const results = normalizeSourceFilterResults(
+      mod.qwerttvv_bj_iptv_filter(raw, 'skip', undefined, 'q_bj_iptv')
+    );
+
+    expect(results.map(({ filename }) => filename)).toEqual([
+      'bj_iptv/q_bj_iptv_172_16_0',
+      'bj_iptv/q_bj_iptv_172_16_1',
+    ]);
+    expect(results[1].m3u).toContain('http://172.16.1.1:4022/rtp/239.3.1.118:8001');
+    expect(results[1].m3u).toContain('http://172.16.1.1:4022/rtp/239.3.1.159:8000');
+  });
 });

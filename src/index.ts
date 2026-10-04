@@ -16,7 +16,7 @@ import {
   writeSources,
 } from './file';
 import { updateChannelList, updateReadme } from './readme';
-import { normalizeSourceFilterResults, sources } from './sources';
+import { CHINA_IPTV_SOURCE_PREFIX, normalizeSourceFilterResults, sources } from './sources';
 import { runCustomTask } from './task/custom';
 import { writeTvBoxJson as writeTvBoxLiveJson } from './tvbox';
 import { Collector } from './utils';
@@ -173,7 +173,16 @@ cleanFiles();
     mergeTxts();
     mergeSources();
     await writeEpgJsonByDate();
-    await writeTvBoxLiveJson('tvbox', outputSources);
+    // TVBox 依赖远程配置，失败时不能阻断后续 channels.json / README 的生成
+    try {
+      // 运营商 IPTV 源只能在对应网络内播放，且数量很大，不放进 TVBox 配置
+      await writeTvBoxLiveJson(
+        'tvbox',
+        outputSources.filter(({ name }) => !name.startsWith(CHINA_IPTV_SOURCE_PREFIX))
+      );
+    } catch (e) {
+      console.warn('[WARNING] Write TVBox json failed:', e);
+    }
     updateChannelsJson(outputSources, sources_res, epgs_sources);
     updateReadme(readmeSources, readmeSourcesRes, epgs_sources, epgs_res);
 

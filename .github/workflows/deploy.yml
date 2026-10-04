@@ -40,6 +40,9 @@ jobs:
       - run: pnpm install
       - run: pnpm build
       - run: pnpm build:static
+        env:
+          IPTV_PROXY_IP_RANGES: ${{ vars.IPTV_PROXY_IP_RANGES }}
+          IPTV_PROXY_PORT: ${{ vars.IPTV_PROXY_PORT }}
 
       # - name: "Jekyll theme"
       #   run: mv ./_config.temp.yml ./m3u/_config.yml

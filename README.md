@@ -19,7 +19,8 @@
 | [epg.pw](https://epg.pw/test_channel_page.html) | 全球频道 |
 | [youhun](https://github.com/HerbertHe/youhun) | 国内频道 |
 | [hotel_tvn](https://github.com/HerbertHe/hotel_tvn) | 酒店源 |
-| [qwerttvv/Beijing-IPTV](https://github.com/qwerttvv/Beijing-IPTV) | 北京联通、移动 IPTV 直播源；组播源转发配置见 [OpenWrt udpxy 配置指南](docs/openwrt-updpxy.md)、[OpenWrt igmpproxy 配置指南](docs/blog-operator-iptv-igmpproxy.md) |
+| [qwerttvv/Beijing-IPTV](https://github.com/qwerttvv/Beijing-IPTV) | 北京联通、移动 IPTV 直播源 |
+| [xisohi/CHINA-IPTV](https://github.com/xisohi/CHINA-IPTV) | 全国各省电信、联通、移动、广电 IPTV 组播 / 单播源，站点上见「IPTV 分地区列表」页；组播源转发配置见 [OpenWrt udpxy 配置指南](docs/openwrt-updpxy.md)、[OpenWrt igmpproxy 配置指南](docs/blog-operator-iptv-igmpproxy.md) |
 
 
 ## 点播源
@@ -244,6 +245,8 @@ docker run -d --name iptv-sources --restart unless-stopped -p 8080:80 `
 | `LIVE_RESULT_DIR` | nginx `location /` 的 `root`，默认 `/app/m3u` |
 | `M3U_ROOT` | 与上项二选一，效果相同（仍优先读已有 `schedule-config.json` 中的 `liveResultDir`） |
 | `CUSTOM_URL`| 站点根 URL，影响 TvBox json 配置文件中 epg 的链接前缀，格式可以为 `http://ip:port` , 其中 `ip` 为 docker 容器运行的宿主机ip |
+| `IPTV_PROXY_IP_RANGES` | 运营商 IPTV 组播代理版本对应的网关网段，逗号分隔的 IP 前三段，每段可写成范围，代理地址为 `<网段>.1`。默认 `192.168.0-10,192.168.123,10.0.0`（共 13 个）。每个网段约增加 380 个文件，Cloudflare Pages 部署时注意 2 万文件上限 |
+| `IPTV_PROXY_PORT` | 组播代理（udpxy / rtp2httpd）端口，默认 `23234` |
 
 一般无需设置环境变量；仅当你需要把 nginx 的 `root` 指到容器内**其他目录**时配置 `LIVE_RESULT_DIR` 或 `M3U_ROOT` 即可。
 

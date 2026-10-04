@@ -1,7 +1,20 @@
 import fs from 'fs';
 import path from 'path';
 
-import { handle_m3u } from './sources';
+import {
+  CHINA_IPTV_OPERATORS,
+  CHINA_IPTV_PROVINCES,
+  CHINA_IPTV_SOURCE_PREFIX,
+  CHINA_IPTV_TYPES,
+  getChinaIptvFileName,
+  getChinaIptvOperatorLogo,
+  handle_m3u,
+  IPTV_PROXY_PORT,
+  LAN_IP_PREFIXES,
+  parseChinaIptvFileName,
+  type TChinaIptvOperator,
+  type TChinaIptvType,
+} from './sources';
 import type { TEPGSource } from './epgs/utils';
 import { get_from_info } from './utils';
 
@@ -16,8 +29,7 @@ export type TREADMESourceResult = [status: string, channelCount: number | undefi
 export type TREADMESourceResults = TREADMESourceResult[][];
 export type TREADMEEPGSources = TEPGSource[];
 
-const QWERTTVV_SOURCE_PREFIX = 'qwerttvv/';
-const LAN_IP_FILENAME_SUFFIX = /_(192_168_\d+|10_0_0)$/;
+const LAN_IP_FILENAME_SUFFIX = /_(\d{1,3}_\d{1,3}_\d{1,3})$/;
 
 const getLanIpDetails = (sourceGroup: IREADMESource[]) =>
   sourceGroup
@@ -31,6 +43,11 @@ const getLanIpDetails = (sourceGroup: IREADMESource[]) =>
       };
     })
     .filter((detail): detail is { ip: string; source: IREADMESource } => detail !== undefined);
+
+const hasLanIpOutputs = (sourceGroup: IREADMESource[]) => getLanIpDetails(sourceGroup).length > 0;
+
+const isChinaIptvGroup = (sourceGroup: IREADMESource[]) =>
+  !!sourceGroup[0]?.name.startsWith(CHINA_IPTV_SOURCE_PREFIX);
 
 const getMoreListName = (sourceGroup: IREADMESource[]) => {
   const firstSource = sourceGroup[0];
@@ -57,19 +74,14 @@ const writeLanIpLists = (sources: TREADMESources) => {
     const source = sourceGroup[0];
     const moreListName = getMoreListName(sourceGroup);
 
-    if (
-      !source?.name.startsWith(QWERTTVV_SOURCE_PREFIX) ||
-      sourceGroup.length <= 1 ||
-      !moreListName
-    ) {
+    if (!source || !hasLanIpOutputs(sourceGroup) || !moreListName) {
       return;
     }
 
-    fs.mkdirSync(listPath, { recursive: true });
-    fs.writeFileSync(
-      path.join(listPath, `${moreListName}.more.list.md`),
-      renderLanIpList(sourceGroup)
-    );
+    const listFile =
+      path.join(listPath, ...moreListName.split('/').filter(Boolean)) + '.more.list.md';
+    fs.mkdirSync(path.dirname(listFile), { recursive: true });
+    fs.writeFileSync(listFile, renderLanIpList(sourceGroup));
   });
 };
 
@@ -79,11 +91,11 @@ export const renderSourceRows = (sources: TREADMESources, sourcesResults: TREADM
       const source = sourceGroup[0];
       const sourceResult = sourcesResults[index]?.[0];
 
-      if (!source) return '';
+      if (!source || isChinaIptvGroup(sourceGroup)) return '';
 
       const moreListName = getMoreListName(sourceGroup);
       const moreLink =
-        source.name.startsWith(QWERTTVV_SOURCE_PREFIX) && sourceGroup.length > 1 && moreListName
+        hasLanIpOutputs(sourceGroup) && moreListName
           ? `<br> **[局域网 IP 列表](/list/${moreListName}.more.list)**`
           : '';
 
@@ -97,6 +109,99 @@ export const renderSourceRows = (sources: TREADMESources, sourcesResults: TREADM
     })
     .filter(Boolean)
     .join('\n');
+
+const REPO_DOCS_URL = 'https://github.com/yunnysunny/iptv-sources/blob/main/docs';
+
+const describeGateways = (lanIpPrefixes: string[]) => {
+  const gateways = lanIpPrefixes.map((prefix) => `${prefix}.1`);
+  return gateways.length <= 16 ? gateways.join('、') : `共 ${gateways.length} 个网关`;
+};
+
+export const renderIptvRegionPage = (
+  sources: TREADMESources,
+  sourcesResults: TREADMESourceResults,
+  { lanIpPrefixes = LAN_IP_PREFIXES, proxyPort = IPTV_PROXY_PORT } = {}
+) => {
+  // f_name -> 频道数（undefined 表示拉取失败）
+  const counts = new Map<string, number | undefined>();
+  sources.forEach((sourceGroup, index) => {
+    const source = sourceGroup[0];
+    if (!source || !isChinaIptvGroup(sourceGroup) || !parseChinaIptvFileName(source.f_name)) {
+      return;
+    }
+
+    counts.set(source.f_name, sourcesResults[index]?.[0]?.[1]);
+  });
+
+  const renderTable = (type: TChinaIptvType) => {
+    const operators = (Object.keys(CHINA_IPTV_OPERATORS) as TChinaIptvOperator[]).filter(
+      (operator) =>
+        Object.keys(CHINA_IPTV_PROVINCES).some((province) =>
+          counts.has(getChinaIptvFileName({ type, province, operator }))
+        )
+    );
+    if (!operators.length) return '';
+
+    const { icon, label } = CHINA_IPTV_TYPES[type];
+    const rows = Object.entries(CHINA_IPTV_PROVINCES).map(([province, provinceName]) => {
+      const columns = operators.map((operator) => {
+        const f_name = getChinaIptvFileName({ type, province, operator });
+        if (!counts.has(f_name)) return '🌐暂无';
+
+        const count = counts.get(f_name);
+        if (count === undefined) return '⚠️更新失败';
+
+        const links = [
+          `[📺m3u](/${f_name}.m3u)`,
+          `[📄txt](/txt/${f_name}.txt)`,
+          `[📋列表](/list/${f_name}.list)`,
+        ];
+        if (type === 'multicast') {
+          links.push(`[🏠代理](/list/${f_name}.more.list)`);
+        }
+        return `${links.join(' ')} <br> ${icon}${count} 个频道`;
+      });
+      return `| ${provinceName} | ${columns.join(' | ')} |`;
+    });
+
+    return [
+      `## ${icon}${label}`,
+      '',
+      `| 地区 | ${operators
+        .map(
+          (operator) =>
+            `<img src="${getChinaIptvOperatorLogo(operator)}" alt="${
+              CHINA_IPTV_OPERATORS[operator]
+            }" height="24"> ${CHINA_IPTV_OPERATORS[operator]}`
+        )
+        .join(' | ')} |`,
+      `| --- | ${operators.map(() => '---').join(' | ')} |`,
+      ...rows,
+    ].join('\n');
+  };
+
+  return `# 🏄‍♀️运营商 IPTV 分地区列表
+
+数据来自 [xisohi/CHINA-IPTV](https://github.com/xisohi/CHINA-IPTV)，按省份和运营商整理。
+
+- 🛰️**组播**：原始地址为 \`rtp://\`，需要在 IPTV 网络内通过 udpxy / rtp2httpd 转发后播放。「🏠代理」页面为以下网关（${describeGateways(lanIpPrefixes)}）生成了 \`http://<网关>:${proxyPort}/rtp/...\` 格式的地址，配置方法见 [OpenWrt udpxy 配置指南](${REPO_DOCS_URL}/openwrt-updpxy.md)、[OpenWrt igmpproxy 配置指南](${REPO_DOCS_URL}/blog-operator-iptv-igmpproxy.md)。
+- 🔗**单播**：一般只能在对应运营商的 IPTV 网络内访问。
+
+${renderTable('multicast')}
+
+${renderTable('unicast')}
+
+Updated at **${new Date()}**`;
+};
+
+const writeIptvRegionPage = (sources: TREADMESources, sourcesResults: TREADMESourceResults) => {
+  const listPath = path.join(path.resolve(), 'm3u', 'list');
+  fs.mkdirSync(listPath, { recursive: true });
+  fs.writeFileSync(
+    path.join(listPath, 'iptv.list.md'),
+    renderIptvRegionPage(sources, sourcesResults)
+  );
+};
 
 export const updateChannelList = (
   name: string,
@@ -179,6 +284,7 @@ export const updateReadme = (
     );
 
   writeLanIpLists(sources);
+  writeIptvRegionPage(sources, sources_res);
 
   if (!fs.existsSync(path.join(path.resolve(), 'm3u'))) {
     fs.mkdirSync(path.join(path.resolve(), 'm3u'));

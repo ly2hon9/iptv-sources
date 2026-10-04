@@ -12,6 +12,7 @@
 | [youhun](https://github.com/HerbertHe/youhun) | 国内频道 |
 | [hotel_tvn](https://github.com/HerbertHe/hotel_tvn) | 酒店源 |
 | [qwerttvv/Beijing-IPTV](https://github.com/qwerttvv/Beijing-IPTV) | 北京联通、移动 IPTV 直播源 |
+| [xisohi/CHINA-IPTV](https://github.com/xisohi/CHINA-IPTV) | 全国各省电信、联通、移动、广电 IPTV 组播 / 单播源，见 [IPTV 分地区列表](/list/iptv.list) |
 
 ## 点播源
 
@@ -25,6 +26,10 @@
 |------|------|
 | [epg.51zmt.top:8000](http://epg.51zmt.top:8000/) | 央视、卫视及地方频道 |
 | [epg.pw](https://epg.pw/) | 抓取中国地区频道列表, 生成 **`epg/pw-7/{date}/{NAME}.json`**（约 7 天滚动窗口）|
+
+## 运营商 IPTV
+
+各省运营商 IPTV 组播、单播源按地区整理在单独页面：**[IPTV 分地区列表](/list/iptv.list)**
 
 ## Channel
 

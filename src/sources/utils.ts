@@ -106,25 +106,25 @@ export const default_txt_filter: ISource['filter'] = (
   let count = 0;
   let group = '未分类';
   const m3uLines: string[] = ['#EXTM3U x-tvg-url="https://tv.whyun.com/epg/51zmt.xml"'];
-  if (caller === 'normal' && collectFn) {
-    for (let i = 0; i < rawArray.length; i++) {
-      const line = rawArray[i].trim();
-      const [name, url] = line.split(',');
-      if (url == '#genre#') {
-        group = name.trim();
-        continue;
-      }
-
-      if (!url) {
-        continue;
-      }
-      const logoName = name.replace(/CCTV/g, 'cctv');
-      const extinf = `#EXTINF:-1 tvg-id="${name}" tvg-name="${name}" \
-tvg-logo="https://tv-res.pages.dev/logo/${logoName}.png" group-title="${group}",${name}`;
-      collectM3uSource(extinf, url, collectFn);
-      m3uLines.push(extinf, url);
-      count++;
+  for (let i = 0; i < rawArray.length; i++) {
+    const line = rawArray[i].trim();
+    const [name, url] = line.split(',').map((s) => s?.trim());
+    if (url == '#genre#') {
+      group = name;
+      continue;
     }
+
+    if (!name || !url) {
+      continue;
+    }
+    const logoName = name.replace(/CCTV/g, 'cctv');
+    const extinf = `#EXTINF:-1 tvg-id="${name}" tvg-name="${name}" \
+tvg-logo="https://tv-res.pages.dev/logo/${logoName}.png" group-title="${group}",${name}`;
+    if (caller === 'normal' && collectFn) {
+      collectM3uSource(extinf, url, collectFn);
+    }
+    m3uLines.push(extinf, url);
+    count++;
   }
 
   return { filename, m3u: m3uLines.join('\n'), channelCount: count };
