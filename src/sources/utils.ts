@@ -40,13 +40,14 @@ export const handle_m3u = (r: string) => {
     .trim()
     .replace(/\r/g, '')
     .split('\n')
+    .map((r) => r.trim())
     .filter((r) => !!r);
 
   let result: string[] = [];
 
   const extM3uRegExp = /#EXTM3U/;
-  const extinfRegExp = /#EXTINF:-1([^,]*),(.*)/;
-  const hostRegExp = /^([^:]+):\/\/([^/]+)/;
+  const extinfRegExp = /^#EXTINF:-1([^,]*),(.*)/;
+  const hostRegExp = /^([a-z][a-z0-9+.-]*):\/\/([^/]+)/i;
 
   for (let i = 0; i < raw.length; i++) {
     if (extM3uRegExp.test(raw[i])) {

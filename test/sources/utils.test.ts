@@ -30,6 +30,20 @@ describe('handle_m3u', () => {
     expect(result.filter((s) => s === '')).toHaveLength(0);
     expect(result[0]).toBe('#EXTM3U');
   });
+
+  it('should drop commented-out channels', () => {
+    const raw = [
+      '#EXTM3U',
+      '##EXTINF:-1,Commented A',
+      '#http://example.com/a',
+      '# #EXTINF:-1,Commented B',
+      'http://example.com/b',
+      '  #EXTINF:-1,Indented C',
+      '  rtp://239.3.1.1:8000',
+    ].join('\n');
+    const result = handle_m3u(raw);
+    expect(result).toEqual(['#EXTM3U', '#EXTINF:-1,Indented C', 'rtp://239.3.1.1:8000']);
+  });
 });
 
 describe('normalizeSourceFilterResults', () => {
