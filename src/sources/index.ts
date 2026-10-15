@@ -7,7 +7,7 @@ import { hotelTvnSources } from './hotel_tvn';
 // import { joevessIptvSources } from './joevess_iptv';
 import { qwerttvvBjIptvSources } from './qwerttvv_bj_iptv';
 // import { yangM3uSources } from './yang_m3u';
-import { youhunSources } from './youhun';
+// import { youhunSources } from './youhun';
 // import { yuechanLiveSources } from './yuechan_live';
 // import { zbdsSources } from './zbds';
 import type { TSources } from './utils';
@@ -28,6 +28,6 @@ export const sources: TSources = [
   ...epgPwSources,
   ...qwerttvvBjIptvSources,
   ...chinaIptvSources,
-  ...youhunSources,
+  // ...youhunSources,
   // ...zbdsSources,
 ];
