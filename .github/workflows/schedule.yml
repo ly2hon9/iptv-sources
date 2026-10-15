@@ -2,8 +2,9 @@ name: update schedule
 
 on:
   schedule:
-    - cron: "17 */2 * * *" # 避开整点高峰，整点的定时任务容易被 GitHub 延迟或丢弃
-  workflow_dispatch:  # ← 添加这行，允许手动触发测试
+    # UTC 19:17 对应 北京时间 (UTC+8) 每天凌晨 03:17
+    - cron: "17 19 * * *"
+  workflow_dispatch: # 支持在 GitHub 网页上手动触发测试
 
 permissions:
   contents: write
@@ -11,49 +12,51 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    strategy:
-      matrix:
-        node-version: [24.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           persist-credentials: true
           fetch-depth: 0
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-      - uses: pnpm/action-setup@v4
+          node-version: 24.x
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 11
           run_install: false
+
       - name: Get pnpm store directory
         id: pnpm-store
         shell: bash
-        run: |
-            echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
       - name: Setup pnpm cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm m3u
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm build
+
+      - name: Generate m3u
+        run: pnpm m3u
         env:
           IPTV_PROXY_IP_RANGES: ${{ vars.IPTV_PROXY_IP_RANGES }}
           IPTV_PROXY_PORT: ${{ vars.IPTV_PROXY_PORT }}
-      - run: sudo apt-get install -y tree
 
-      - name: Publish m3u (Cloudflare direct upload or empty commit)
+      - name: Publish m3u (Cloudflare direct upload or trigger Pages build)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -61,28 +64,11 @@ jobs:
         run: |
           if [ -n "${CLOUDFLARE_API_TOKEN}" ]; then
             pnpm static
-            tree m3u
+            find m3u -maxdepth 2
             npx wrangler pages deploy m3u --project-name="${PROJECT_NAME}"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit --allow-empty -m "chore: schedule refresh (trigger Cloudflare Pages build)"
-            git push
+            git push origin HEAD:${{ github.ref_name }}
           fi
-
-      # - name: "Jekyll theme"
-      #   run: mv ./_config.temp.yml ./m3u/_config.yml
-
-      # - name: Deploy
-      #   uses: peaceiris/actions-gh-pages@v3
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: ./m3u
-      #     enable_jekyll: true
-      #     cname: m3u.ibert.me
-
-      # - name: discord
-      #   uses: HerbertHe/discord-action@v1
-      #   with:
-      #     webhook: ${{ secrets.DISCORD_WEBHOOK }}
-      #     message: ${{ github.repository }} has been successfullly updated, see https://m3u.ibert.me to get more.
