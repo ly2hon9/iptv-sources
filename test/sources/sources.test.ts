@@ -22,11 +22,13 @@ describe('sources', () => {
 });
 
 describe('zbdsSources', () => {
-  it('should contain ipv4 and ipv6 sources', () => {
-    expect(zbdsSources).toHaveLength(2);
-    const names = zbdsSources.map((s) => s.filename);
-    expect(names).toContain('zbds_ipv4');
-    expect(names).toContain('zbds_ipv6');
+  it('should only contain the ipv4 source', () => {
+    expect(zbdsSources).toHaveLength(1);
+    expect(zbdsSources[0].filename).toBe('zbds_ipv4');
+  });
+
+  it('should be registered in sources', () => {
+    expect(sources).toContain(zbdsSources[0]);
   });
 
   it('url should point to m3u', () => {
